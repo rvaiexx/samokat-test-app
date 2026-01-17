@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Самокат — Доставка за 15 минут</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f5f5f7; scroll-behavior: smooth; }
+        .cart-open { transform: translateX(0) !important; }
+        .active-cat { background: white; color: #FF335F; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .rounded-samokat { border-radius: 32px; }
+    </style>
+</head>
+<body class="antialiased text-[#1a1a1a]">
+
+    <div id="auth-modal" class="fixed inset-0 bg-black/50 z-[300] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-samokat p-8 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black">Вход</h2>
+                <button onclick="closeModals()" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="x"></i></button>
+            </div>
+            <input type="tel" placeholder="+7 (___) ___-__-__" class="w-full bg-gray-100 border-none rounded-2xl py-4 px-6 mb-4 text-lg outline-none focus:ring-2 focus:ring-[#FF335F]">
+            <button onclick="closeModals()" class="w-full bg-[#FF335F] text-white py-4 rounded-2xl font-bold text-lg">Получить код</button>
+        </div>
+    </div>
+
+    <div id="checkout-modal" class="fixed inset-0 bg-black/50 z-[300] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-samokat p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black italic">Оформление</h2>
+                <button onclick="closeModals()" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="x"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-2">Адрес доставки</label>
+                    <input type="text" placeholder="Улица и дом" class="w-full bg-gray-100 border-none rounded-2xl py-4 px-6 mt-1 outline-none focus:ring-2 focus:ring-[#FF335F]">
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <input type="text" placeholder="Подъезд" class="bg-gray-100 border-none rounded-2xl py-4 px-4 outline-none">
+                    <input type="text" placeholder="Этаж" class="bg-gray-100 border-none rounded-2xl py-4 px-4 outline-none">
+                    <input type="text" placeholder="Кв." class="bg-gray-100 border-none rounded-2xl py-4 px-4 outline-none">
+                </div>
+                <textarea placeholder="Комментарий для курьера" class="w-full bg-gray-100 border-none rounded-2xl py-4 px-6 h-24 outline-none"></textarea>
+                
+                <div class="p-4 bg-pink-50 rounded-2xl">
+                    <div class="flex justify-between font-black text-xl text-[#FF335F]">
+                        <span>К оплате:</span>
+                        <span id="final-price-display">0 ₽</span>
+                    </div>
+                </div>
+                <button onclick="confirmOrder()" class="w-full bg-[#FF335F] text-white py-5 rounded-2xl font-bold text-lg shadow-lg hover:opacity-90 transition">Заказать</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cart-sidebar" class="fixed right-0 top-0 h-full w-full md:w-[420px] bg-white z-[250] shadow-2xl translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-6 flex justify-between items-center border-b">
+            <h2 class="text-2xl font-black">Корзина</h2>
+            <button onclick="toggleCart()" class="p-2 hover:bg-gray-100 rounded-full"><i data-lucide="x"></i></button>
+        </div>
+        <div id="cart-list" class="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+            </div>
+        <div class="p-6 border-t space-y-4">
+            <div class="flex justify-between items-center font-bold text-lg italic">
+                <span>Итого к оплате</span>
+                <span id="cart-total-price">0 ₽</span>
+            </div>
+            <button onclick="openCheckout()" class="w-full bg-[#FF335F] text-white py-5 rounded-2xl font-bold text-lg">Перейти к оформлению</button>
+        </div>
+    </div>
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-[100] border-b border-gray-100">
+        <div class="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <div class="bg-[#FF335F] text-white font-black px-5 py-2 rounded-2xl text-2xl tracking-tighter cursor-pointer italic">САМОКАТ</div>
+                <div class="hidden lg:flex flex-col cursor-pointer bg-gray-50 px-4 py-1 rounded-xl">
+                    <span class="text-[10px] text-gray-400 font-bold uppercase">Доставка 15 мин</span>
+                    <span class="text-sm font-bold flex items-center">📍 Укажите адрес <i data-lucide="chevron-down" class="w-4 h-4 ml-1"></i></span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="openAuth()" class="p-3 hover:bg-gray-100 rounded-2xl transition"><i data-lucide="user"></i></button>
+                <button onclick="toggleCart()" class="bg-[#FF335F] text-white px-6 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-md">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <span id="header-cart-total">0 ₽</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-[1400px] mx-auto px-6 flex gap-10 mt-10">
+        <aside class="hidden md:block w-64 shrink-0">
+            <nav id="cat-nav" class="sticky top-28 space-y-1">
+                </nav>
+        </aside>
+
+        <main class="flex-1 pb-20">
+            <h1 id="cat-title" class="text-4xl font-black mb-10 italic">Все продукты</h1>
+            <div id="catalog-grid" class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                </div>
+        </main>
+    </div>
+
+    <script>
+        // ДАННЫЕ (Подготовлено для Telegram Бота)
+        let products = [
+            { id: 1, name: "Круассан с кремом", price: 119, cat: "Выпечка", stock: 5, img: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?w=400" },
+            { id: 2, name: "Молоко 3.2%", price: 89, cat: "Молоко", stock: 3, img: "https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+            { id: 3, name: "Бананы", price: 145, cat: "Фрукты", stock: 12, img: "https://images.unsplash.com/photo-1603833665858-e61d17a86224?w=400" },
+            { id: 4, name: "Яйца куриные С0", price: 129, cat: "Молоко", stock: 2, img: "https://plus.unsplash.com/premium_photo-1676813808814-38617c86c419?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+            { id: 5, name: "Авокадо Хасс", price: 199, cat: "Фрукты", stock: 0, img: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400" },
+            { id: 6, name: "Пончик клубничный", price: 65, cat: "Выпечка", stock: 8, img: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=400" }
+        ];
+
+        const categories = ["Все", "Выпечка", "Молоко", "Фрукты"];
+        let cart = {}; 
+        let currentCat = "Все";
+
+        // ЛОГИКА ТОВАРОВ
+        function renderProducts() {
+            const grid = document.getElementById('catalog-grid');
+            const filtered = products.filter(p => currentCat === "Все" || p.cat === currentCat);
+            
+            grid.innerHTML = filtered.map(p => {
+                const count = cart[p.id] || 0;
+                const outOfStock = p.stock <= 0;
+                return `
+                    <div class="bg-white p-4 rounded-samokat shadow-sm transition hover:shadow-xl group ${outOfStock ? 'opacity-50' : ''}">
+                        <div class="relative overflow-hidden rounded-2xl mb-4">
+                            <img src="${p.img}" class="w-full h-44 object-cover group-hover:scale-105 transition-transform">
+                            ${outOfStock ? `<div class="absolute inset-0 bg-white/60 flex items-center justify-center font-black text-red-500 uppercase text-xs">Закончился</div>` : ''}
+                        </div>
+                        <div class="text-2xl font-black mb-1">${p.price} ₽</div>
+                        <div class="text-sm font-semibold h-10 line-clamp-2 leading-tight mb-2">${p.name}</div>
+                        <div class="text-[10px] font-black uppercase mb-4 ${p.stock < 3 && p.stock > 0 ? 'text-red-500' : 'text-gray-400'}">
+                            ${outOfStock ? 'Нет в наличии' : `Осталось: ${p.stock} шт`}
+                        </div>
+                        
+                        ${!outOfStock ? (
+                            count > 0 ? `
+                                <div class="flex items-center justify-between bg-gray-100 rounded-2xl p-1">
+                                    <button onclick="updateQty(${p.id}, -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold text-[#FF335F]">-</button>
+                                    <span class="font-bold">${count}</span>
+                                    <button onclick="updateQty(${p.id}, 1)" ${count >= p.stock + count ? 'disabled' : ''} class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold text-[#FF335F]">+</button>
+                                </div>
+                            ` : `
+                                <button onclick="updateQty(${p.id}, 1)" class="w-full bg-gray-100 hover:bg-[#FF335F] hover:text-white py-3.5 rounded-2xl font-bold transition">Добавить</button>
+                            `
+                        ) : `<div class="py-3.5 text-center text-gray-400 font-bold">Скоро будет</div>`}
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function updateQty(id, delta) {
+            const p = products.find(x => x.id === id);
+            if (delta > 0 && p.stock > 0) {
+                cart[id] = (cart[id] || 0) + 1;
+                p.stock--;
+                if(p.stock === 0) console.log(`ОТПРАВКА БОТУ: Товар ${p.name} закончился!`);
+            } else if (delta < 0 && cart[id] > 0) {
+                cart[id]--;
+                p.stock++;
+                if (cart[id] === 0) delete cart[id];
+            }
+            renderProducts();
+            updateUI();
+        }
+
+        function updateUI() {
+            let total = 0;
+            const cartList = document.getElementById('cart-list');
+            let html = '';
+
+            for (let id in cart) {
+                const p = products.find(x => x.id == id);
+                total += p.price * cart[id];
+                html += `
+                    <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl">
+                        <img src="${p.img}" class="w-16 h-16 rounded-xl object-cover">
+                        <div class="flex-1 font-bold text-sm">
+                            <div>${p.name}</div>
+                            <div class="text-[#FF335F]">${p.price * cart[id]} ₽</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="updateQty(${id}, -1)" class="w-8 h-8 bg-white rounded-lg border text-[#FF335F]">-</button>
+                            <span class="font-bold w-4 text-center">${cart[id]}</span>
+                            <button onclick="updateQty(${id}, 1)" class="w-8 h-8 bg-white rounded-lg border text-[#FF335F]">+</button>
+                        </div>
+                    </div>
+                `;
+            }
+            cartList.innerHTML = html || '<div class="text-center py-20 text-gray-400 font-bold italic text-xl">Тут пока пусто</div>';
+            document.getElementById('header-cart-total').innerText = total + ' ₽';
+            document.getElementById('cart-total-price').innerText = total + ' ₽';
+            document.getElementById('final-price-display').innerText = total + ' ₽';
+        }
+
+        // КАТЕГОРИИ
+        function renderCats() {
+            const nav = document.getElementById('cat-nav');
+            nav.innerHTML = categories.map(c => `
+                <button onclick="setCat('${c}')" class="w-full flex items-center p-4 rounded-2xl font-bold transition ${currentCat === c ? 'active-cat' : 'hover:bg-white/40'}">
+                    ${c}
+                </button>
+            `).join('');
+        }
+        function setCat(c) { currentCat = c; document.getElementById('cat-title').innerText = c === 'Все' ? 'Все продукты' : c; renderCats(); renderProducts(); }
+
+        // ОКНА
+        function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('cart-open'); }
+        function openAuth() { document.getElementById('auth-modal').classList.remove('hidden'); document.getElementById('auth-modal').classList.add('flex'); }
+        function openCheckout() { 
+            if (Object.keys(cart).length === 0) return alert('Корзина пуста!');
+            document.getElementById('checkout-modal').classList.remove('hidden'); 
+            document.getElementById('checkout-modal').classList.add('flex'); 
+        }
+        function closeModals() { 
+            document.getElementById('auth-modal').classList.add('hidden'); 
+            document.getElementById('checkout-modal').classList.add('hidden'); 
+        }
+        function confirmOrder() {
+            alert('Заказ отправлен! Мы свяжемся с вами.');
+            cart = {};
+            closeModals();
+            updateUI();
+            renderProducts();
+        }
+
+        // СТАРТ
+        renderCats();
+        renderProducts();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
