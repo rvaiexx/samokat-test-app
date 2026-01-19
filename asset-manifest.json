@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/samokat-test-app/static/js/main.bdbfe7ef.js",
+    "index.html": "/samokat-test-app/index.html",
+    "main.bdbfe7ef.js.map": "/samokat-test-app/static/js/main.bdbfe7ef.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.bdbfe7ef.js"
+  ]
+}
